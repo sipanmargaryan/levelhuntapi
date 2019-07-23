@@ -1,0 +1,68 @@
+version: "2"
+
+services:
+  project_img:
+    build: .
+    image: levelhunt-api:latest
+
+  project_app:
+    image: levelhunt-api:latest
+    volumes:
+      - .:/project
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db/postgres
+      IPYTHONDIR: /project/.ipython
+
+  db:
+    image: postgres:10
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  redis:
+    image: redis:3.2
+    volumes:
+      - redis:/data
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+    - "1025:1025"
+    - "8025:8025"
+
+  celery:
+    extends: project_app
+    depends_on:
+      - db
+      - redis
+    command: ./wait-for-it.sh db:5432 -- celery -A project worker -l info
+    environment:
+      C_FORCE_ROOT: "1"
+
+  project:
+    extends: project_app
+    depends_on:
+      - db
+      - redis
+      - celery
+      - mailhog
+    command: ./wait-for-it.sh db:5432 -- python3 manage.py runserver 0:8000
+    ports:
+      - "8000:8000"
+
+  partial:
+    extends: project_app
+    depends_on:
+      - db
+      - redis
+    command: ./wait-for-it.sh db:5432 -- python3 manage.py runserver 0:8000
+    ports:
+      - "8000:8000"
+
+  packages:
+    extends: project_app
+    volumes:
+      - .:/host
+
+volumes:
+  db:
+  redis:

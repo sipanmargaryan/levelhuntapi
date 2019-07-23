@@ -1,0 +1,43 @@
+*
+!apps
+!project
+!manage.py
+!setup.py
+!setup.cfg
+!requirements
+!.env
+!pytest.ini
+
+**/*.orig
+**/*.log
+**/.DS_Store
+**/.sass-cache
+**/.git
+**/_build
+**/.env
+*.db
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/*.so
+**/.Python
+**/*.egg-info
+**/.installed.cfg
+**/*.egg
+
+# Unit test / coverage reports
+**/htmlcov/
+**/.tox/
+**/.coverage
+**/.coverage.*
+**/.cache
+**/nosetests.xml
+**/coverage.xml
+**/*,cover
+**/.hypothesis/
+
+# Project specific
+media/
