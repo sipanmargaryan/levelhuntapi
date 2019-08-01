@@ -48,3 +48,16 @@ class Option(models.Model):
 
     def __str__(self):  # pragma: no cover
         return self.option
+
+    @classmethod
+    def attach_to_question(cls, question, options):
+        option_data = dict(
+            question=question
+        )
+        options_list = []
+        for option in options:
+            for key, value in option.items():
+                option_data[key] = value
+            options_list.append(cls(**option_data))
+        cls.objects.bulk_create(options_list)
+

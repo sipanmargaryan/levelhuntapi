@@ -40,6 +40,10 @@ class Skill(AbstractStatusModel, AbstractOrderingModel):
     def __str__(self):  # pragma: no cover
         return self.name
 
+    @classmethod
+    def as_choices(cls):
+        return cls.objects.values_list('pk', 'name')
+
 
 class Topic(AbstractStatusModel, AbstractOrderingModel, TimeStampedModel):
     name = models.CharField(max_length=100)
@@ -49,3 +53,7 @@ class Topic(AbstractStatusModel, AbstractOrderingModel, TimeStampedModel):
 
     def __str__(self):  # pragma: no cover
         return self.name
+
+    @classmethod
+    def as_choices(cls):
+        return cls.objects.values_list('pk', 'name')

@@ -14,4 +14,7 @@ app_name = 'admins'
 urlpatterns = [
     path('', include(router.urls)),
     path('change-ordering/', ChangeOrderingAPIView.as_view(), name='change_ordering'),
+    path('question/', QuestionAPIView.as_view(), name='retrieve'),
+    path('add-question/', AddQuestionAPIView.as_view(), name='add'),
+    path('edit-question/<int:pk>/', EditQuestionAPIView.as_view(), name='edit'),
 ]

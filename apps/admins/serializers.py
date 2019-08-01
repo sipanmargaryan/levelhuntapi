@@ -1,10 +1,13 @@
 from rest_framework import serializers
+from rest_framework.fields import CurrentUserDefault
 
 from django.db import models
 from django.utils.functional import lazy
 
 import skills.models
 import universities.models
+import questions.models
+import core.models.models
 from core.models.models import AbstractOrderingModel
 
 __all__ = (
@@ -14,6 +17,7 @@ __all__ = (
     'SkillSerializer',
     'TopicSerializer',
     'ChangeOrderingSerializer',
+    'QuestionCreateSerializer',
 )
 
 
@@ -99,3 +103,60 @@ class ChangeOrderingSerializer(serializers.Serializer):
             item=item,
             ordering_number=self.validated_data['ordering_number'],
         )
+
+
+class OptionSerializer(serializers.ModelSerializer):
+    option_id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = questions.models.Option
+        fields = ('option_id', 'option', 'is_correct', )
+
+
+# noinspection PyAbstractClass
+class QuestionCreateSerializer(serializers.ModelSerializer):
+    topics = serializers.MultipleChoiceField(choices=skills.models.Topic.as_choices())
+    skill = serializers.ChoiceField(choices=skills.models.Skill.as_choices())
+    level = serializers.ChoiceField(choices=questions.models.Question.LEVELS, initial=questions.models.Question.EASY)
+    options = OptionSerializer(source='option_set', many=True)
+
+    class Meta:
+        model = questions.models.Question
+        fields = ('question', 'description', 'level', 'skill', 'topics', 'options', )
+
+    def validate(self, attrs):
+        topics = skills.models.Topic.objects.filter(pk__in=attrs['topics'])
+        if len(topics) != len(attrs['topics']):
+            raise serializers.ValidationError('Invalid topics!')
+        attrs['topics'] = topics
+        try:
+            attrs['skill'] = skills.models.Skill.objects.get(pk=attrs['skill'])
+        except models.ObjectDoesNotExist:
+            raise serializers.ValidationError('Skill not found!')
+
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        question = self.Meta.model.objects.create(
+            question=validated_data['question'],
+            description=validated_data['description'],
+            level=validated_data['level'],
+            skill=validated_data['skill'],
+            status=core.models.models.AbstractStatusModel.ACTIVE,
+            submitted_by=user,
+            accepted_by=user,
+        )
+        question.topics.add(*validated_data['topics'])
+        question.save()
+        return question
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            if attr == 'topics':
+                field = getattr(instance, attr)
+                field.set(value)
+            elif attr != 'option_set':
+                setattr(instance, attr, value)
+        instance.save()
+        return instance
